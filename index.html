@@ -502,7 +502,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#666';
       ctx.font = '500 0.75rem -apple-system, sans-serif';
-      ctx.fillText('合計', cx, cy - 14);
+      ctx.fillText(t('chartTotal'), cx, cy - 14);
       ctx.fillStyle = '#1a1a2e';
       ctx.font = 'bold 1.15rem -apple-system, sans-serif';
       ctx.fillText(text, cx, cy + 10);
@@ -601,7 +601,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
         <td>${escapeHtml(f.name)}</td>
         <td>${escapeHtml(f.assetType)}</td>
         <td class="amount"><input class="edit-amount" type="text" value="${Math.round(f.amount).toLocaleString('ja-JP')}" data-id="${f.id}" inputmode="numeric"></td>
-        <td><button class="btn btn-danger" data-delete="${f.id}">削除</button></td>
+        <td><button class="btn btn-danger" data-delete="${f.id}">${t('btnDelete')}</button></td>
       </tr>
     `).join('');
     if (lastAddedFundId) {
@@ -720,7 +720,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     // Legend
     const legend = document.getElementById('chartLegend');
     if (grand === 0) {
-      legend.innerHTML = '<p class="empty-msg">データがありません</p>';
+      legend.innerHTML = '<p class="empty-msg">' + t('noData') + '</p>';
       return;
     }
     legend.innerHTML = assetTypes.map((assetType, i) => {
@@ -728,7 +728,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       const pct = (totals[assetType] / grand * 100).toFixed(1);
       return `<div class="chart-legend-item">
         <span class="chart-legend-color" style="background:${assetColors[i]}"></span>
-        <span class="chart-legend-label">${assetType}</span>
+        <span class="chart-legend-label">${tAsset(assetType)}</span>
         <span class="chart-legend-value">${formatYen(totals[assetType])} (${pct}%)</span>
       </div>`;
     }).join('');
@@ -782,7 +782,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
       // Update header for buy-only mode
       const thead = document.querySelector('#allocTable thead tr');
-      thead.innerHTML = '<th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">現在金額</th><th class="amount">買い増し額</th><th class="amount">買増後金額</th><th class="amount">買増後比率</th>';
+      thead.innerHTML = `<th>${t('thAssetType')}</th><th class="amount">${t('thTargetPct')}</th><th class="amount">${t('thCurrentAmt')}</th><th class="amount">${t('thBuyAmt')}</th><th class="amount">${t('thAfterAmt')}</th><th class="amount">${t('thAfterPct')}</th>`;
 
       let totalBuy = 0;
       tbody.innerHTML = assetTypes.map((assetType, i) => {
@@ -805,7 +805,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
         totalBuy += buyAmount;
         const buyClass = buyAmount > 0.5 ? 'diff-positive' : '';
         return `<tr>
-          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${assetType}</td>
+          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${tAsset(assetType)}</td>
           <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${assetType}"></td>
           <td class="amount">${formatYen(current)}</td>
           <td class="amount ${buyClass}">${buyAmount > 0.5 ? '+' + formatYen(buyAmount) : '-'}</td>
@@ -828,13 +828,13 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
       // Update footer labels
       const tfoot = document.querySelector('#allocTable tfoot tr');
-      tfoot.innerHTML = `<td>合計</td><td class="amount" id="totalTargetPct">${totalPct.toFixed(1)}%</td><td class="amount" id="totalCurrent">${formatYen(grand)}</td><td class="amount ${totalBuy > 0.5 ? 'diff-positive' : ''}" id="totalDiff">${totalBuy > 0.5 ? '+' + formatYen(totalBuy) : '-'}</td><td class="amount" id="totalTarget">${formatYen(afterGrand)}</td><td class="amount" id="totalDiffPct">100%</td>`;
+      tfoot.innerHTML = `<td>${t('totalLabel')}</td><td class="amount" id="totalTargetPct">${totalPct.toFixed(1)}%</td><td class="amount" id="totalCurrent">${formatYen(grand)}</td><td class="amount ${totalBuy > 0.5 ? 'diff-positive' : ''}" id="totalDiff">${totalBuy > 0.5 ? '+' + formatYen(totalBuy) : '-'}</td><td class="amount" id="totalTarget">${formatYen(afterGrand)}</td><td class="amount" id="totalDiffPct">100%</td>`;
       tfoot.className = 'total-row';
 
       // Note
       const note = document.getElementById('rebalanceNote');
       if (!hasExtra) {
-        note.textContent = '追加投資額を入力すると、その金額を最適に振り分けます';
+        note.textContent = t('noteNoBuyExtra');
         note.style.display = '';
       } else {
         note.textContent = '';
@@ -846,7 +846,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       const hasInput = monthlyTotal > 0;
 
       const thead = document.querySelector('#allocTable thead tr');
-      thead.innerHTML = '<th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">毎月積立額</th>';
+      thead.innerHTML = `<th>${t('thAssetType')}</th><th class="amount">${t('thTargetPct')}</th><th class="amount">${t('thMonthlyAlloc')}</th>`;
 
       let sumAlloc = 0;
       tbody.innerHTML = assetTypes.map((assetType, i) => {
@@ -854,19 +854,19 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
         const alloc = (hasInput && totalPct > 0) ? monthlyTotal * pct / totalPct : 0;
         sumAlloc += alloc;
         return `<tr>
-          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${assetType}</td>
+          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${tAsset(assetType)}</td>
           <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${assetType}"></td>
           <td class="amount">${hasInput && pct > 0 ? formatYen(alloc) : '-'}</td>
         </tr>`;
       }).join('');
 
       const tfoot = document.querySelector('#allocTable tfoot tr');
-      tfoot.innerHTML = `<td>合計</td><td class="amount" id="totalTargetPct">${totalPct.toFixed(1)}%</td><td class="amount" id="totalCurrent">${hasInput ? formatYen(sumAlloc) : '-'}</td>`;
+      tfoot.innerHTML = `<td>${t('totalLabel')}</td><td class="amount" id="totalTargetPct">${totalPct.toFixed(1)}%</td><td class="amount" id="totalCurrent">${hasInput ? formatYen(sumAlloc) : '-'}</td>`;
       tfoot.className = 'total-row';
 
       const note = document.getElementById('rebalanceNote');
       if (!hasInput) {
-        note.textContent = '毎月の積立額を入力すると、目標比率に応じた配分を表示します';
+        note.textContent = t('noteTsumitate');
         note.style.display = '';
       } else {
         note.textContent = '';
@@ -875,7 +875,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     } else {
       // Normal mode (original)
       const thead = document.querySelector('#allocTable thead tr');
-      thead.innerHTML = '<th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">現在金額</th><th class="amount">目標金額</th><th class="amount">差分</th><th class="amount">差分(%)</th>';
+      thead.innerHTML = `<th>${t('thAssetType')}</th><th class="amount">${t('thTargetPct')}</th><th class="amount">${t('thCurrentAmt')}</th><th class="amount">${t('thTargetAmt')}</th><th class="amount">${t('thDiff')}</th><th class="amount">${t('thDiffPct')}</th>`;
 
       document.getElementById('rebalanceNote').style.display = 'none';
 
@@ -887,7 +887,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
         const diffClass = diff > 0.5 ? 'diff-positive' : diff < -0.5 ? 'diff-negative' : '';
         const diffPct = grand > 0 ? (diff / grand * 100).toFixed(1) : '0.0';
         return `<tr>
-          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${assetType}</td>
+          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${tAsset(assetType)}</td>
           <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${assetType}"></td>
           <td class="amount">${formatYen(current)}</td>
           <td class="amount">${formatYen(target)}</td>
@@ -901,7 +901,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       const totalDiff = totalTarget - grand;
       // Rebuild footer for normal mode
       const tfoot = document.querySelector('#allocTable tfoot tr');
-      tfoot.innerHTML = `<td>合計</td><td class="amount" id="totalTargetPct">${totalPct.toFixed(1)}%</td><td class="amount" id="totalCurrent">${formatYen(grand)}</td><td class="amount" id="totalTarget">${formatYen(totalTarget)}</td><td class="amount ${totalDiff > 0.5 ? 'diff-positive' : totalDiff < -0.5 ? 'diff-negative' : ''}" id="totalDiff">${(totalDiff >= 0 ? '+' : '') + formatYen(totalDiff)}</td><td class="amount ${totalDiff > 0.5 ? 'diff-positive' : totalDiff < -0.5 ? 'diff-negative' : ''}" id="totalDiffPct">${(totalDiff >= 0 ? '+' : '') + (grand > 0 ? (totalDiff / grand * 100).toFixed(1) : '0.0')}%</td>`;
+      tfoot.innerHTML = `<td>${t('totalLabel')}</td><td class="amount" id="totalTargetPct">${totalPct.toFixed(1)}%</td><td class="amount" id="totalCurrent">${formatYen(grand)}</td><td class="amount" id="totalTarget">${formatYen(totalTarget)}</td><td class="amount ${totalDiff > 0.5 ? 'diff-positive' : totalDiff < -0.5 ? 'diff-negative' : ''}" id="totalDiff">${(totalDiff >= 0 ? '+' : '') + formatYen(totalDiff)}</td><td class="amount ${totalDiff > 0.5 ? 'diff-positive' : totalDiff < -0.5 ? 'diff-negative' : ''}" id="totalDiffPct">${(totalDiff >= 0 ? '+' : '') + (grand > 0 ? (totalDiff / grand * 100).toFixed(1) : '0.0')}%</td>`;
       tfoot.className = 'total-row';
     }
 
@@ -913,8 +913,8 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
   function renderAssetSelect() {
     const sel = document.getElementById('assetTypeSelect');
     const current = sel.value;
-    sel.innerHTML = '<option value="">アセット種別</option>' +
-      assetTypes.map(assetType => `<option value="${escapeHtml(assetType)}">${escapeHtml(assetType)}</option>`).join('');
+    sel.innerHTML = `<option value="">${t('phAssetType')}</option>` +
+      assetTypes.map(assetType => `<option value="${escapeHtml(assetType)}">${escapeHtml(tAsset(assetType))}</option>`).join('');
     if (current && assetTypes.includes(current)) sel.value = current;
   }
 
@@ -1335,7 +1335,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     if (!btn) return;
     withdrawMode = btn.dataset.mode;
     this.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
-    document.getElementById('withdrawInput').placeholder = withdrawMode === 'amount' ? '取り崩し額' : '取り崩し率(%)';
+    document.getElementById('withdrawInput').placeholder = withdrawMode === 'amount' ? t('phWithdrawAmount') : t('phWithdrawPct');
     document.getElementById('withdrawInput').value = '';
     document.getElementById('withdrawConverted').textContent = '';
     document.getElementById('withdrawError').classList.remove('show');
@@ -1410,7 +1410,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       const r = result[assetType];
       if (r.current <= 0 && r.targetPct <= 0) return '';
       return `<tr>
-        <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${assetType}</td>
+        <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${tAsset(assetType)}</td>
         <td class="amount">${formatYen(r.current)}</td>
         <td class="amount sell-amount">${r.sell > 0.5 ? '-' + formatYen(r.sell) : '-'}</td>
         <td class="amount">${formatYen(r.after)}</td>
