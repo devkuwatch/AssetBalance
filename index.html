@@ -186,6 +186,19 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 }
 .settings-btn:hover { opacity: 1; }
 
+/* Language toggle */
+.lang-toggle {
+  display: inline-flex; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px; overflow: hidden;
+}
+.lang-toggle button {
+  padding: 0.25rem 0.6rem; border: none; background: transparent; color: rgba(255,255,255,0.7);
+  cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: background 0.2s, color 0.2s;
+}
+.lang-toggle button.active {
+  background: rgba(255,255,255,0.2); color: #fff;
+}
+.lang-toggle button:hover:not(.active) { color: #fff; }
+
 /* Responsive */
 @media (max-width: 600px) {
   .fund-form { flex-direction: column; }
@@ -204,7 +217,11 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 <body>
 <header>
   <div class="header-row">
-    <h1>アセットバランス管理</h1>
+    <h1 data-i18n="appTitle">アセットバランス管理</h1>
+    <div class="lang-toggle" id="langToggle">
+      <button type="button" data-lang="ja" class="active">JA</button>
+      <button type="button" data-lang="en">EN</button>
+    </div>
     <button type="button" class="settings-btn" id="settingsBtn" title="アセット種別設定">⚙</button>
   </div>
 </header>
