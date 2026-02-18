@@ -455,7 +455,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
   let funds = [];
   let targetPcts = {};
-  assetTypes.forEach(t => targetPcts[t] = 0);
+  assetTypes.forEach(assetType => targetPcts[assetType] = 0);
 
   let chart = null;
   let lastAddedFundId = null;
@@ -527,8 +527,8 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       if (Array.isArray(data.funds)) funds = data.funds;
       if (data.targetPcts) {
         targetPcts = {};
-        assetTypes.forEach(t => {
-          targetPcts[t] = typeof data.targetPcts[t] === 'number' ? data.targetPcts[t] : 0;
+        assetTypes.forEach(assetType => {
+          targetPcts[assetType] = typeof data.targetPcts[assetType] === 'number' ? data.targetPcts[assetType] : 0;
         });
       }
     } catch(e) { /* ignore corrupt data */ }
@@ -537,7 +537,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
   // --- Aggregation ---
   function getAssetTotals() {
     const totals = {};
-    assetTypes.forEach(t => totals[t] = 0);
+    assetTypes.forEach(assetType => totals[assetType] = 0);
     funds.forEach(f => { totals[f.assetType] = (totals[f.assetType] || 0) + f.amount; });
     return totals;
   }
@@ -688,13 +688,13 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       legend.innerHTML = '<p class="empty-msg">データがありません</p>';
       return;
     }
-    legend.innerHTML = assetTypes.map((t, i) => {
-      if (totals[t] <= 0) return '';
-      const pct = (totals[t] / grand * 100).toFixed(1);
+    legend.innerHTML = assetTypes.map((assetType, i) => {
+      if (totals[assetType] <= 0) return '';
+      const pct = (totals[assetType] / grand * 100).toFixed(1);
       return `<div class="chart-legend-item">
         <span class="chart-legend-color" style="background:${assetColors[i]}"></span>
-        <span class="chart-legend-label">${t}</span>
-        <span class="chart-legend-value">${formatYen(totals[t])} (${pct}%)</span>
+        <span class="chart-legend-label">${assetType}</span>
+        <span class="chart-legend-value">${formatYen(totals[assetType])} (${pct}%)</span>
       </div>`;
     }).join('');
   }
@@ -713,19 +713,19 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     let totalBuy = 0;
 
     // Calculate ideal amounts after adding extra investment
-    assetTypes.forEach(t => {
-      const current = totals[t];
-      const idealAfter = newTotal * (targetPcts[t] || 0) / totalPct;
+    assetTypes.forEach(assetType => {
+      const current = totals[assetType];
+      const idealAfter = newTotal * (targetPcts[assetType] || 0) / totalPct;
       const buy = Math.max(0, idealAfter - current);
-      result[t] = { current, buy, targetPct: targetPcts[t] || 0 };
+      result[assetType] = { current, buy, targetPct: targetPcts[assetType] || 0 };
       totalBuy += buy;
     });
 
     // Scale buy amounts to match the extra investment amount
     if (extraAmount > 0 && totalBuy > 0.5) {
       const scale = extraAmount / totalBuy;
-      assetTypes.forEach(t => {
-        result[t].buy = result[t].buy * scale;
+      assetTypes.forEach(assetType => {
+        result[assetType].buy = result[assetType].buy * scale;
       });
     }
 
@@ -750,13 +750,13 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       thead.innerHTML = '<th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">現在金額</th><th class="amount">買い増し額</th><th class="amount">買増後金額</th><th class="amount">買増後比率</th>';
 
       let totalBuy = 0;
-      tbody.innerHTML = assetTypes.map((t, i) => {
-        const current = totals[t];
-        const pct = targetPcts[t] || 0;
+      tbody.innerHTML = assetTypes.map((assetType, i) => {
+        const current = totals[assetType];
+        const pct = targetPcts[assetType] || 0;
         let buyAmount, afterAmount, afterPct;
 
         if (hasExtra && result) {
-          buyAmount = result[t].buy;
+          buyAmount = result[assetType].buy;
           afterAmount = current + buyAmount;
           afterPct = newTotal > 0 ? (afterAmount / newTotal * 100).toFixed(1) : '0.0';
         } else {
@@ -770,8 +770,8 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
         totalBuy += buyAmount;
         const buyClass = buyAmount > 0.5 ? 'diff-positive' : '';
         return `<tr>
-          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${t}</td>
-          <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${t}"></td>
+          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${assetType}</td>
+          <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${assetType}"></td>
           <td class="amount">${formatYen(current)}</td>
           <td class="amount ${buyClass}">${buyAmount > 0.5 ? '+' + formatYen(buyAmount) : '-'}</td>
           <td class="amount">${formatYen(afterAmount)}</td>
@@ -814,13 +814,13 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       thead.innerHTML = '<th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">毎月積立額</th>';
 
       let sumAlloc = 0;
-      tbody.innerHTML = assetTypes.map((t, i) => {
-        const pct = targetPcts[t] || 0;
+      tbody.innerHTML = assetTypes.map((assetType, i) => {
+        const pct = targetPcts[assetType] || 0;
         const alloc = (hasInput && totalPct > 0) ? monthlyTotal * pct / totalPct : 0;
         sumAlloc += alloc;
         return `<tr>
-          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${t}</td>
-          <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${t}"></td>
+          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${assetType}</td>
+          <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${assetType}"></td>
           <td class="amount">${hasInput && pct > 0 ? formatYen(alloc) : '-'}</td>
         </tr>`;
       }).join('');
@@ -844,16 +844,16 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
       document.getElementById('rebalanceNote').style.display = 'none';
 
-      tbody.innerHTML = assetTypes.map((t, i) => {
-        const current = totals[t];
-        const pct = targetPcts[t] || 0;
+      tbody.innerHTML = assetTypes.map((assetType, i) => {
+        const current = totals[assetType];
+        const pct = targetPcts[assetType] || 0;
         const target = grand * pct / 100;
         const diff = target - current;
         const diffClass = diff > 0.5 ? 'diff-positive' : diff < -0.5 ? 'diff-negative' : '';
         const diffPct = grand > 0 ? (diff / grand * 100).toFixed(1) : '0.0';
         return `<tr>
-          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${t}</td>
-          <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${t}"></td>
+          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${assetType}</td>
+          <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${assetType}"></td>
           <td class="amount">${formatYen(current)}</td>
           <td class="amount">${formatYen(target)}</td>
           <td class="amount ${diffClass}">${diff >= 0 ? '+' : ''}${formatYen(diff)}</td>
@@ -903,7 +903,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     const oldColors = assetColors.slice();
 
     // Working copy: each item tracks its originalName for rename detection
-    let items = assetTypes.map((t, i) => ({ name: t, color: assetColors[i] || '#888888', originalName: t }));
+    let items = assetTypes.map((assetType, i) => ({ name: assetType, color: assetColors[i] || '#888888', originalName: assetType }));
 
     function buildList() {
       const listEl = dialog.querySelector('.settings-list');
@@ -1015,7 +1015,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
     // Default
     dialog.querySelector('#settingsDefaultBtn').addEventListener('click', function() {
-      items = DEFAULT_ASSET_TYPES.map((t, i) => ({ name: t, color: DEFAULT_COLORS[i], originalName: t }));
+      items = DEFAULT_ASSET_TYPES.map((assetType, i) => ({ name: assetType, color: DEFAULT_COLORS[i], originalName: assetType }));
       buildList();
     });
 
@@ -1060,21 +1060,21 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     });
 
     // Deleted types: warn if funds exist, then remove from targetPcts
-    const deletedWithFunds = oldTypes.filter(t => !newTypes.includes(t) && funds.some(f => f.assetType === t));
+    const deletedWithFunds = oldTypes.filter(assetType => !newTypes.includes(assetType) && funds.some(f => f.assetType === assetType));
     if (deletedWithFunds.length > 0) {
       const names = deletedWithFunds.join('、');
       if (!confirm(`「${names}」にはファンドが登録されています。種別を削除するとこれらのファンドが種別なしになります。続行しますか？`)) return;
     }
-    oldTypes.forEach(t => {
-      if (!newTypes.includes(t)) {
-        delete targetPcts[t];
+    oldTypes.forEach(assetType => {
+      if (!newTypes.includes(assetType)) {
+        delete targetPcts[assetType];
       }
     });
 
     // Added types: add to targetPcts with 0
-    newTypes.forEach(t => {
-      if (typeof targetPcts[t] !== 'number') {
-        targetPcts[t] = 0;
+    newTypes.forEach(assetType => {
+      if (typeof targetPcts[assetType] !== 'number') {
+        targetPcts[assetType] = 0;
       }
     });
 
@@ -1185,8 +1185,8 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
         }
         funds = data.funds.filter(f => f.id && f.name && f.assetType && typeof f.amount === 'number');
         targetPcts = {};
-        assetTypes.forEach(t => {
-          targetPcts[t] = (data.targetPcts && typeof data.targetPcts[t] === 'number') ? data.targetPcts[t] : 0;
+        assetTypes.forEach(assetType => {
+          targetPcts[assetType] = (data.targetPcts && typeof data.targetPcts[assetType] === 'number') ? data.targetPcts[assetType] : 0;
         });
         save();
         renderAll();
@@ -1206,7 +1206,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     assetTypes = DEFAULT_ASSET_TYPES.slice();
     assetColors = DEFAULT_COLORS.slice();
     targetPcts = {};
-    assetTypes.forEach(t => targetPcts[t] = 0);
+    assetTypes.forEach(assetType => targetPcts[assetType] = 0);
     save();
     renderAll();
   });
@@ -1251,36 +1251,36 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     const totalTargetPct = Object.values(targetPcts).reduce((s, v) => s + v, 0);
 
     const result = {};
-    assetTypes.forEach(t => {
-      const current = totals[t];
-      const idealAfter = afterTotal * (targetPcts[t] || 0) / totalTargetPct;
+    assetTypes.forEach(assetType => {
+      const current = totals[assetType];
+      const idealAfter = afterTotal * (targetPcts[assetType] || 0) / totalTargetPct;
       const rawSell = current - idealAfter;
-      result[t] = {
+      result[assetType] = {
         current,
         sell: Math.max(0, Math.min(rawSell, current)),
-        targetPct: targetPcts[t] || 0
+        targetPct: targetPcts[assetType] || 0
       };
     });
 
     // Adjust if total sell doesn't match withdrawTotal
-    let totalSell = assetTypes.reduce((s, t) => s + result[t].sell, 0);
+    let totalSell = assetTypes.reduce((s, assetType) => s + result[assetType].sell, 0);
     let shortfall = withdrawTotal - totalSell;
 
     if (shortfall > 0.5) {
-      const distributable = assetTypes.filter(t => result[t].current - result[t].sell > 0.5);
-      const distribTotal = distributable.reduce((s, t) => s + (result[t].current - result[t].sell), 0);
+      const distributable = assetTypes.filter(assetType => result[assetType].current - result[assetType].sell > 0.5);
+      const distribTotal = distributable.reduce((s, assetType) => s + (result[assetType].current - result[assetType].sell), 0);
       if (distribTotal > 0) {
-        distributable.forEach(t => {
-          const remaining = result[t].current - result[t].sell;
+        distributable.forEach(assetType => {
+          const remaining = result[assetType].current - result[assetType].sell;
           const extra = Math.min(remaining, shortfall * (remaining / distribTotal));
-          result[t].sell += extra;
+          result[assetType].sell += extra;
         });
       }
     }
 
-    assetTypes.forEach(t => {
-      result[t].after = result[t].current - result[t].sell;
-      result[t].afterPct = afterTotal > 0 ? (result[t].after / afterTotal * 100) : 0;
+    assetTypes.forEach(assetType => {
+      result[assetType].after = result[assetType].current - result[assetType].sell;
+      result[assetType].afterPct = afterTotal > 0 ? (result[assetType].after / afterTotal * 100) : 0;
     });
 
     return result;
@@ -1363,11 +1363,11 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     const afterTotal = grand - withdrawTotal;
 
     const tbody = document.getElementById('withdrawBody');
-    tbody.innerHTML = assetTypes.map((t, i) => {
-      const r = result[t];
+    tbody.innerHTML = assetTypes.map((assetType, i) => {
+      const r = result[assetType];
       if (r.current <= 0 && r.targetPct <= 0) return '';
       return `<tr>
-        <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${t}</td>
+        <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${assetType}</td>
         <td class="amount">${formatYen(r.current)}</td>
         <td class="amount sell-amount">${r.sell > 0.5 ? '-' + formatYen(r.sell) : '-'}</td>
         <td class="amount">${formatYen(r.after)}</td>
@@ -1376,7 +1376,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       </tr>`;
     }).join('');
 
-    const totalSell = assetTypes.reduce((s, t) => s + result[t].sell, 0);
+    const totalSell = assetTypes.reduce((s, assetType) => s + result[assetType].sell, 0);
     document.getElementById('wdTotalCurrent').textContent = formatYen(grand);
     document.getElementById('wdTotalSell').innerHTML = '<span class="sell-amount">-' + formatYen(totalSell) + '</span>';
     document.getElementById('wdTotalAfter').textContent = formatYen(afterTotal);
