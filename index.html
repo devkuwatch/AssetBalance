@@ -228,19 +228,19 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 <main>
   <!-- Fund Input Section -->
   <div class="card">
-    <h2>ファンド入力</h2>
+    <h2 data-i18n="sectionFund">ファンド入力</h2>
     <form class="fund-form" id="fundForm">
-      <input type="text" name="fundName" placeholder="ファンド名" required>
+      <input type="text" name="fundName" data-i18n-placeholder="phFundName" placeholder="ファンド名" required>
       <select name="assetType" required id="assetTypeSelect">
-        <option value="">アセット種別</option>
+        <option value="" data-i18n="phAssetType">アセット種別</option>
       </select>
-      <input type="text" name="amount" placeholder="金額" required inputmode="numeric">
-      <button type="submit" class="btn btn-primary">追加</button>
+      <input type="text" name="amount" data-i18n-placeholder="phAmount" placeholder="金額" required inputmode="numeric">
+      <button type="submit" class="btn btn-primary" data-i18n="btnAdd">追加</button>
     </form>
     <div id="fundTableWrapper">
-      <p class="empty-msg" id="emptyMsg">ファンドが登録されていません。上のフォームから追加してください。</p>
+      <p class="empty-msg" id="emptyMsg" data-i18n="emptyFunds">ファンドが登録されていません。上のフォームから追加してください。</p>
       <table id="fundTable" style="display:none;">
-        <thead><tr><th></th><th>ファンド名</th><th>アセット種別</th><th class="amount">金額</th><th></th></tr></thead>
+        <thead><tr><th></th><th data-i18n="thFundName">ファンド名</th><th data-i18n="thAssetType">アセット種別</th><th class="amount" data-i18n="thAmount">金額</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -248,7 +248,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
   <!-- Chart Section -->
   <div class="card">
-    <h2>現在のアセット配分</h2>
+    <h2 data-i18n="sectionChart">現在のアセット配分</h2>
     <div class="chart-container">
       <canvas id="assetChart"></canvas>
     </div>
@@ -257,15 +257,15 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
   <!-- Allocation Section -->
   <div class="card">
-    <h2>目標アロケーション &amp; 差分</h2>
+    <h2 data-i18n="sectionAlloc">目標アロケーション &amp; 差分</h2>
     <div class="rebalance-row">
       <div class="rebalance-toggle" id="rebalanceToggle">
-        <button type="button" data-mode="tsumitate">積立</button>
-        <button type="button" class="active" data-mode="normal">通常</button>
-        <button type="button" data-mode="buyonly">買い増しリバランス</button>
+        <button type="button" data-mode="tsumitate" data-i18n="modeTsumitate">積立</button>
+        <button type="button" class="active" data-mode="normal" data-i18n="modeNormal">通常</button>
+        <button type="button" data-mode="buyonly" data-i18n="modeBuyonly">買い増しリバランス</button>
       </div>
-      <input type="text" class="rebalance-extra-input" id="extraInvestInput" placeholder="追加投資額" inputmode="numeric" style="display:none;">
-      <input type="text" class="rebalance-extra-input" id="tsumitateInput" placeholder="毎月の積立額" inputmode="numeric" style="display:none;">
+      <input type="text" class="rebalance-extra-input" id="extraInvestInput" data-i18n-placeholder="phExtraInvest" placeholder="追加投資額" inputmode="numeric" style="display:none;">
+      <input type="text" class="rebalance-extra-input" id="tsumitateInput" data-i18n-placeholder="phTsumitate" placeholder="毎月の積立額" inputmode="numeric" style="display:none;">
       <span class="rebalance-note" id="rebalanceNote" style="display:none;"></span>
     </div>
     <div class="table-scroll">
@@ -275,26 +275,26 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       <tfoot><tr class="total-row"><td>合計</td><td class="amount" id="totalTargetPct">0%</td><td class="amount" id="totalCurrent">¥0</td><td class="amount" id="totalTarget">¥0</td><td class="amount" id="totalDiff">¥0</td><td class="amount" id="totalDiffPct">0%</td></tr></tfoot>
     </table>
     </div>
-    <p class="validation-warn" id="allocWarn">目標比率の合計が100%ではありません。</p>
+    <p class="validation-warn" id="allocWarn" data-i18n="allocWarn">目標比率の合計が100%ではありません。</p>
   </div>
 
   <!-- Withdrawal Simulation -->
   <div class="card">
-    <h2>取り崩しシミュレーション</h2>
+    <h2 data-i18n="sectionWithdraw">取り崩しシミュレーション</h2>
     <div class="withdraw-input-row">
       <div class="withdraw-toggle" id="withdrawToggle">
-        <button type="button" class="active" data-mode="amount">金額</button>
-        <button type="button" data-mode="percent">パーセント</button>
+        <button type="button" class="active" data-mode="amount" data-i18n="modeAmount">金額</button>
+        <button type="button" data-mode="percent" data-i18n="modePct">パーセント</button>
       </div>
       <input type="text" id="withdrawInput" placeholder="取り崩し額" inputmode="numeric">
       <span class="withdraw-converted" id="withdrawConverted"></span>
-      <button type="button" class="btn btn-primary" id="withdrawCalcBtn">計算</button>
+      <button type="button" class="btn btn-primary" id="withdrawCalcBtn" data-i18n="btnCalc">計算</button>
     </div>
     <p class="withdraw-error" id="withdrawError"></p>
     <div class="withdraw-result" id="withdrawResult">
       <div class="table-scroll">
       <table class="alloc-table">
-        <thead><tr><th>アセット種別</th><th class="amount">現在残高</th><th class="amount">売却額</th><th class="amount">取崩後残高</th><th class="amount">取崩後比率</th><th class="amount">目標比率</th></tr></thead>
+        <thead><tr><th data-i18n="thAssetType">アセット種別</th><th class="amount" data-i18n="thBalance">現在残高</th><th class="amount" data-i18n="thSell">売却額</th><th class="amount" data-i18n="thAfterBalance">取崩後残高</th><th class="amount" data-i18n="thAfterRatio">取崩後比率</th><th class="amount" data-i18n="thTargetRatio">目標比率</th></tr></thead>
         <tbody id="withdrawBody"></tbody>
         <tfoot><tr class="total-row"><td>合計</td><td class="amount" id="wdTotalCurrent"></td><td class="amount" id="wdTotalSell"></td><td class="amount" id="wdTotalAfter"></td><td class="amount" id="wdTotalAfterPct"></td><td class="amount" id="wdTotalTargetPct"></td></tr></tfoot>
       </table>
@@ -304,12 +304,12 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
   <!-- Data Management -->
   <div class="card">
-    <h2>データ管理</h2>
+    <h2 data-i18n="sectionData">データ管理</h2>
     <div class="data-actions">
-      <button class="btn btn-secondary" id="exportBtn">JSONエクスポート</button>
-      <button class="btn btn-secondary" id="importBtn">JSONインポート</button>
+      <button class="btn btn-secondary" id="exportBtn" data-i18n="btnExport">JSONエクスポート</button>
+      <button class="btn btn-secondary" id="importBtn" data-i18n="btnImport">JSONインポート</button>
       <input type="file" id="importFile" accept=".json">
-      <button class="btn btn-danger" id="clearBtn">全データクリア</button>
+      <button class="btn btn-danger" id="clearBtn" data-i18n="btnClear">全データクリア</button>
     </div>
   </div>
 </main>
