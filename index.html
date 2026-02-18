@@ -296,7 +296,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       <table class="alloc-table">
         <thead><tr><th data-i18n="thAssetType">アセット種別</th><th class="amount" data-i18n="thBalance">現在残高</th><th class="amount" data-i18n="thSell">売却額</th><th class="amount" data-i18n="thAfterBalance">取崩後残高</th><th class="amount" data-i18n="thAfterRatio">取崩後比率</th><th class="amount" data-i18n="thTargetRatio">目標比率</th></tr></thead>
         <tbody id="withdrawBody"></tbody>
-        <tfoot><tr class="total-row"><td>合計</td><td class="amount" id="wdTotalCurrent"></td><td class="amount" id="wdTotalSell"></td><td class="amount" id="wdTotalAfter"></td><td class="amount" id="wdTotalAfterPct"></td><td class="amount" id="wdTotalTargetPct"></td></tr></tfoot>
+        <tfoot><tr class="total-row"><td data-i18n="totalLabel">合計</td><td class="amount" id="wdTotalCurrent"></td><td class="amount" id="wdTotalSell"></td><td class="amount" id="wdTotalAfter"></td><td class="amount" id="wdTotalAfterPct"></td><td class="amount" id="wdTotalTargetPct"></td></tr></tfoot>
       </table>
       </div>
     </div>
@@ -520,6 +520,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
       el.placeholder = t(el.dataset.i18nPlaceholder);
     });
+    document.getElementById('withdrawInput').placeholder = t('phWithdrawAmount');
     // Sync lang toggle buttons
     document.querySelectorAll('#langToggle button').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.lang === lang);
@@ -947,7 +948,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
         const row = document.createElement('div');
         row.className = 'settings-row';
         row.draggable = false;
-        row.innerHTML = `<span class="drag-handle">☰</span><input type="text" value="${escapeHtml(item.name)}" data-idx="${i}"><input type="color" value="${item.color}" data-idx="${i}"><button type="button" class="btn btn-danger" data-delidx="${i}">削除</button>`;
+        row.innerHTML = `<span class="drag-handle">☰</span><input type="text" value="${escapeHtml(item.name)}" data-idx="${i}"><input type="color" value="${item.color}" data-idx="${i}"><button type="button" class="btn btn-danger" data-delidx="${i}">${t('btnDelete')}</button>`;
         listEl.appendChild(row);
       });
       initSettingsDrag(listEl);
@@ -1097,7 +1098,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     // Deleted types: warn if funds exist, then remove from targetPcts
     const deletedWithFunds = oldTypes.filter(assetType => !newTypes.includes(assetType) && funds.some(f => f.assetType === assetType));
     if (deletedWithFunds.length > 0) {
-      const names = deletedWithFunds.join('、');
+      const names = deletedWithFunds.join(lang === 'en' ? ', ' : '、');
       const confirmMsg = lang === 'en'
         ? `"${names}" has registered funds. Deleting will leave those funds without a type. Continue?`
         : `「${names}」にはファンドが登録されています。種別を削除するとこれらのファンドが種別なしになります。続行しますか？`;
