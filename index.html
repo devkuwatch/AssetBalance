@@ -303,6 +303,152 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
   const DEFAULT_ASSET_TYPES = ['国内株','海外先進国株','新興国株','国内債券','海外先進国債券','新興国債券','海外REIT','国内REIT','コモディティ'];
   const DEFAULT_COLORS = ['#4361ee','#3a86ff','#8338ec','#ff006e','#fb5607','#06d6a0','#118ab2','#cfbe0b','#ffbe0b'];
+
+  const TRANSLATIONS = {
+    ja: {
+      appTitle: 'アセットバランス管理',
+      sectionFund: 'ファンド入力',
+      sectionChart: '現在のアセット配分',
+      sectionAlloc: '目標アロケーション & 差分',
+      sectionWithdraw: '取り崩しシミュレーション',
+      sectionData: 'データ管理',
+      btnAdd: '追加',
+      btnDelete: '削除',
+      btnCalc: '計算',
+      btnExport: 'JSONエクスポート',
+      btnImport: 'JSONインポート',
+      btnClear: '全データクリア',
+      phFundName: 'ファンド名',
+      phAmount: '金額',
+      phAssetType: 'アセット種別',
+      phExtraInvest: '追加投資額',
+      phTsumitate: '毎月の積立額',
+      phWithdrawAmount: '取り崩し額',
+      phWithdrawPct: '取り崩し率(%)',
+      thFundName: 'ファンド名',
+      thAssetType: 'アセット種別',
+      thAmount: '金額',
+      thTargetPct: '目標比率(%)',
+      thCurrentAmt: '現在金額',
+      thTargetAmt: '目標金額',
+      thDiff: '差分',
+      thDiffPct: '差分(%)',
+      thBuyAmt: '買い増し額',
+      thAfterAmt: '買増後金額',
+      thAfterPct: '買増後比率',
+      thMonthlyAlloc: '毎月積立額',
+      thBalance: '現在残高',
+      thSell: '売却額',
+      thAfterBalance: '取崩後残高',
+      thAfterRatio: '取崩後比率',
+      thTargetRatio: '目標比率',
+      totalLabel: '合計',
+      chartTotal: '合計',
+      noData: 'データがありません',
+      emptyFunds: 'ファンドが登録されていません。上のフォームから追加してください。',
+      allocWarn: '目標比率の合計が100%ではありません。',
+      noteNoBuyExtra: '追加投資額を入力すると、その金額を最適に振り分けます',
+      noteTsumitate: '毎月の積立額を入力すると、目標比率に応じた配分を表示します',
+      modeNormal: '通常',
+      modeBuyonly: '買い増しリバランス',
+      modeTsumitate: '積立',
+      modeAmount: '金額',
+      modePct: 'パーセント',
+      settingsDialogTitle: 'アセット種別設定',
+      btnSettingsAdd: '＋ アセット種別を追加',
+      btnSettingsDefault: 'デフォルトに戻す',
+      btnSettingsCancel: 'キャンセル',
+      btnSettingsSave: '保存',
+      alertInvalidAmount: '金額を正しく入力してください。',
+      alertMinAssetType: '少なくとも1つのアセット種別が必要です。',
+      confirmClearAll: '全てのファンドデータと目標比率をクリアします。よろしいですか？',
+      alertImportDone: 'インポートが完了しました。',
+      alertImportFail: 'JSONファイルの読み込みに失敗しました。',
+      errNoFunds: 'ファンドが登録されていません。',
+      errNoAlloc: '目標アロケーションを設定してください。',
+      errInvalidPct: '取り崩し率を正しく入力してください。',
+      errInvalidWithdraw: '取り崩し額を正しく入力してください。',
+      errExceedsTotal: '取り崩し額がポートフォリオ合計を超えています。',
+    },
+    en: {
+      appTitle: 'Asset Balance Manager',
+      sectionFund: 'Fund Entry',
+      sectionChart: 'Current Asset Allocation',
+      sectionAlloc: 'Target Allocation & Diff',
+      sectionWithdraw: 'Withdrawal Simulation',
+      sectionData: 'Data Management',
+      btnAdd: 'Add',
+      btnDelete: 'Delete',
+      btnCalc: 'Calculate',
+      btnExport: 'Export JSON',
+      btnImport: 'Import JSON',
+      btnClear: 'Clear All Data',
+      phFundName: 'Fund Name',
+      phAmount: 'Amount',
+      phAssetType: 'Asset Type',
+      phExtraInvest: 'Extra Investment',
+      phTsumitate: 'Monthly Amount',
+      phWithdrawAmount: 'Withdrawal Amount',
+      phWithdrawPct: 'Withdrawal Rate (%)',
+      thFundName: 'Fund Name',
+      thAssetType: 'Asset Type',
+      thAmount: 'Amount',
+      thTargetPct: 'Target (%)',
+      thCurrentAmt: 'Current',
+      thTargetAmt: 'Target',
+      thDiff: 'Diff',
+      thDiffPct: 'Diff (%)',
+      thBuyAmt: 'Buy Amount',
+      thAfterAmt: 'After Buy',
+      thAfterPct: 'After Buy Ratio',
+      thMonthlyAlloc: 'Monthly Alloc',
+      thBalance: 'Current Balance',
+      thSell: 'Sell Amount',
+      thAfterBalance: 'After Withdrawal',
+      thAfterRatio: 'After Ratio',
+      thTargetRatio: 'Target Ratio',
+      totalLabel: 'Total',
+      chartTotal: 'Total',
+      noData: 'No data',
+      emptyFunds: 'No funds registered. Add one using the form above.',
+      allocWarn: 'Target percentages do not sum to 100%.',
+      noteNoBuyExtra: 'Enter an extra investment amount to optimize allocation.',
+      noteTsumitate: 'Enter a monthly accumulation amount to see allocation by target ratio.',
+      modeNormal: 'Normal',
+      modeBuyonly: 'Buy-only Rebalance',
+      modeTsumitate: 'Accumulation',
+      modeAmount: 'Amount',
+      modePct: 'Percent',
+      settingsDialogTitle: 'Asset Type Settings',
+      btnSettingsAdd: '+ Add Asset Type',
+      btnSettingsDefault: 'Reset to Default',
+      btnSettingsCancel: 'Cancel',
+      btnSettingsSave: 'Save',
+      alertInvalidAmount: 'Please enter a valid amount.',
+      alertMinAssetType: 'At least one asset type is required.',
+      confirmClearAll: 'Clear all fund data and target percentages. Are you sure?',
+      alertImportDone: 'Import complete.',
+      alertImportFail: 'Failed to read JSON file.',
+      errNoFunds: 'No funds registered.',
+      errNoAlloc: 'Please set the target allocation.',
+      errInvalidPct: 'Please enter a valid withdrawal rate.',
+      errInvalidWithdraw: 'Please enter a valid withdrawal amount.',
+      errExceedsTotal: 'Withdrawal amount exceeds portfolio total.',
+    }
+  };
+
+  const ASSET_TYPE_MAP = {
+    '国内株': 'Domestic Equity',
+    '海外先進国株': 'Intl Developed Equity',
+    '新興国株': 'Emerging Markets Equity',
+    '国内債券': 'Domestic Bonds',
+    '海外先進国債券': 'Intl Developed Bonds',
+    '新興国債券': 'Emerging Markets Bonds',
+    '海外REIT': 'Global REIT',
+    '国内REIT': 'Domestic REIT',
+    'コモディティ': 'Commodities'
+  };
+
   let assetTypes = DEFAULT_ASSET_TYPES.slice();
   let assetColors = DEFAULT_COLORS.slice();
   const STORAGE_KEY = 'assetBalanceData';
@@ -313,6 +459,17 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
   let chart = null;
   let lastAddedFundId = null;
+
+  let lang = 'ja';
+
+  function t(key) {
+    return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.ja[key] || key;
+  }
+
+  function tAsset(name) {
+    if (lang === 'en' && ASSET_TYPE_MAP[name]) return ASSET_TYPE_MAP[name];
+    return name;
+  }
 
   // Chart.js plugin: center text
   const centerTextPlugin = {
