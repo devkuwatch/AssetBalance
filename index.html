@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アセットバランス管理</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  background: #f0f2f5; color: #1a1a2e; line-height: 1.6;
+}
+header {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: #fff; padding: 1.2rem 1.5rem; text-align: center;
+}
+header h1 { font-size: 1.4rem; font-weight: 600; }
+main { max-width: 960px; margin: 1.5rem auto; padding: 0 1rem; }
+.card {
+  background: #fff; border-radius: 12px; padding: 1.5rem;
+  margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.card h2 {
+  font-size: 1.1rem; margin-bottom: 1rem; padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e8e8e8; color: #16213e;
+}
+
+/* Form */
+.fund-form { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.fund-form input, .fund-form select {
+  padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 8px;
+  font-size: 0.95rem; outline: none; transition: border-color 0.2s;
+}
+.fund-form input:focus, .fund-form select:focus { border-color: #4361ee; }
+.fund-form input[name="fundName"] { flex: 1; min-width: 140px; }
+.fund-form input[name="amount"] { width: 140px; }
+.fund-form select { min-width: 150px; }
+.btn {
+  padding: 0.5rem 1.2rem; border: none; border-radius: 8px;
+  font-size: 0.95rem; cursor: pointer; font-weight: 500; transition: background 0.2s, transform 0.1s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: #4361ee; color: #fff; }
+.btn-primary:hover { background: #3a56d4; }
+.btn-danger { background: #ef476f; color: #fff; padding: 0.3rem 0.7rem; font-size: 0.85rem; }
+.btn-danger:hover { background: #d63d61; }
+.btn-secondary { background: #e8e8e8; color: #333; }
+.btn-secondary:hover { background: #ddd; }
+
+/* Table */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid #eee; }
+th { font-weight: 600; font-size: 0.85rem; color: #666; text-transform: uppercase; letter-spacing: 0.03em; }
+td { font-size: 0.95rem; }
+td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+th.amount { text-align: right; }
+td .edit-amount {
+  width: 120px; padding: 0.25rem 0.5rem; border: 1px solid #ccc;
+  border-radius: 6px; text-align: right; font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+.empty-msg { text-align: center; color: #999; padding: 2rem 0; font-size: 0.95rem; }
+.drag-handle {
+  cursor: grab; color: #aaa; user-select: none; font-size: 1.1rem; padding: 0 0.3rem;
+}
+.drag-handle:active { cursor: grabbing; }
+tr.dragging { opacity: 0.4; }
+tr.drag-over td { border-top: 2px solid #4361ee; }
+@keyframes row-highlight { from { background: #e8f0fe; } to { background: transparent; } }
+tr.just-added { animation: row-highlight 1.5s ease-out; }
+
+/* Chart */
+.chart-container { max-width: 400px; margin: 0 auto; position: relative; }
+.chart-legend { margin-top: 1rem; }
+.chart-legend-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.3rem 0; font-size: 0.9rem;
+}
+.chart-legend-color {
+  width: 14px; height: 14px; border-radius: 3px; margin-right: 0.5rem; flex-shrink: 0;
+}
+.chart-legend-label { flex: 1; }
+.chart-legend-value { text-align: right; font-variant-numeric: tabular-nums; color: #555; }
+
+/* Allocation table */
+.alloc-table input[type="number"] {
+  width: 70px; padding: 0.25rem 0.4rem; border: 1px solid #ccc;
+  border-radius: 6px; text-align: right; font-size: 0.95rem;
+}
+.alloc-table td.amount { font-variant-numeric: tabular-nums; }
+.diff-positive { color: #2563eb; font-weight: 500; }
+.diff-negative { color: #ef476f; font-weight: 500; }
+.validation-warn {
+  color: #ef476f; font-size: 0.85rem; margin-top: 0.5rem;
+  display: none; font-weight: 500;
+}
+.validation-warn.show { display: block; }
+
+/* Rebalance toggle */
+.rebalance-row {
+  display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;
+}
+.rebalance-toggle {
+  display: inline-flex; border: 1px solid #ccc; border-radius: 8px; overflow: hidden;
+}
+.rebalance-toggle button {
+  padding: 0.4rem 1rem; border: none; background: #f0f2f5; cursor: pointer;
+  font-size: 0.9rem; transition: background 0.2s, color 0.2s;
+}
+.rebalance-toggle button.active {
+  background: #4361ee; color: #fff;
+}
+.rebalance-extra-input {
+  width: 180px; padding: 0.5rem 0.75rem; border: 1px solid #ccc;
+  border-radius: 8px; font-size: 0.95rem; text-align: right;
+}
+.rebalance-extra-input:focus { border-color: #4361ee; outline: none; }
+.rebalance-note { color: #666; font-size: 0.85rem; }
+
+/* Withdrawal simulation */
+.withdraw-input-row {
+  display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;
+}
+.withdraw-toggle {
+  display: inline-flex; border: 1px solid #ccc; border-radius: 8px; overflow: hidden;
+}
+.withdraw-toggle button {
+  padding: 0.4rem 1rem; border: none; background: #f0f2f5; cursor: pointer;
+  font-size: 0.9rem; transition: background 0.2s, color 0.2s;
+}
+.withdraw-toggle button.active {
+  background: #4361ee; color: #fff;
+}
+.withdraw-input-row input[type="text"] {
+  width: 160px; padding: 0.5rem 0.75rem; border: 1px solid #ccc;
+  border-radius: 8px; font-size: 0.95rem; text-align: right;
+}
+.withdraw-input-row input[type="text"]:focus { border-color: #4361ee; outline: none; }
+.withdraw-converted { color: #666; font-size: 0.9rem; }
+.withdraw-error {
+  color: #ef476f; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem; display: none;
+}
+.withdraw-error.show { display: block; }
+.withdraw-result { display: none; }
+.withdraw-result.show { display: block; }
+.sell-amount { color: #ef476f; font-weight: 500; }
+
+.total-row { font-weight: 600; background: #f8f9fa; }
+
+/* Data management */
+.data-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+#importFile { display: none; }
+
+/* Settings dialog */
+.settings-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.settings-dialog {
+  background: #fff; border-radius: 12px; padding: 1.5rem; max-width: 500px; width: 100%;
+  max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.settings-dialog h2 { font-size: 1.1rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e8e8e8; color: #16213e; }
+.settings-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.settings-row {
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.settings-row input[type="text"] {
+  flex: 1; padding: 0.4rem 0.6rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem;
+}
+.settings-row input[type="text"]:focus { border-color: #4361ee; outline: none; }
+.settings-row input[type="color"] {
+  width: 36px; height: 32px; padding: 2px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; background: #fff;
+}
+.settings-row .btn-danger { flex-shrink: 0; }
+.settings-row .drag-handle { cursor: grab; color: #aaa; user-select: none; font-size: 1.1rem; padding: 0 0.2rem; }
+.settings-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+.settings-actions .btn { min-width: 80px; text-align: center; }
+.settings-add-row { margin-bottom: 1rem; }
+.header-row { display: flex; align-items: center; justify-content: center; gap: 0.75rem; }
+.settings-btn {
+  background: none; border: none; color: #fff; font-size: 1.3rem; cursor: pointer;
+  opacity: 0.8; transition: opacity 0.2s; padding: 0.2rem;
+}
+.settings-btn:hover { opacity: 1; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .fund-form { flex-direction: column; }
+  .fund-form input, .fund-form select { width: 100%; min-width: 0; }
+  td, th { padding: 0.4rem 0.5rem; font-size: 0.85rem; }
+  .chart-container { max-width: 300px; }
+  .data-actions { flex-direction: column; }
+  .data-actions .btn { width: 100%; text-align: center; }
+  .withdraw-input-row { flex-direction: column; align-items: stretch; }
+  .withdraw-input-row input[type="text"] { width: 100%; }
+  .rebalance-row { flex-direction: column; align-items: stretch; }
+  .rebalance-extra-input { width: 100%; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <h1>アセットバランス管理</h1>
+    <button type="button" class="settings-btn" id="settingsBtn" title="アセット種別設定">⚙</button>
+  </div>
+</header>
+<main>
+  <!-- Fund Input Section -->
+  <div class="card">
+    <h2>ファンド入力</h2>
+    <form class="fund-form" id="fundForm">
+      <input type="text" name="fundName" placeholder="ファンド名" required>
+      <select name="assetType" required id="assetTypeSelect">
+        <option value="">アセット種別</option>
+      </select>
+      <input type="text" name="amount" placeholder="金額" required inputmode="numeric">
+      <button type="submit" class="btn btn-primary">追加</button>
+    </form>
+    <div id="fundTableWrapper">
+      <p class="empty-msg" id="emptyMsg">ファンドが登録されていません。上のフォームから追加してください。</p>
+      <table id="fundTable" style="display:none;">
+        <thead><tr><th></th><th>ファンド名</th><th>アセット種別</th><th class="amount">金額</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Chart Section -->
+  <div class="card">
+    <h2>現在のアセット配分</h2>
+    <div class="chart-container">
+      <canvas id="assetChart"></canvas>
+    </div>
+    <div class="chart-legend" id="chartLegend"></div>
+  </div>
+
+  <!-- Allocation Section -->
+  <div class="card">
+    <h2>目標アロケーション &amp; 差分</h2>
+    <div class="rebalance-row">
+      <div class="rebalance-toggle" id="rebalanceToggle">
+        <button type="button" data-mode="tsumitate">積立</button>
+        <button type="button" class="active" data-mode="normal">通常</button>
+        <button type="button" data-mode="buyonly">買い増しリバランス</button>
+      </div>
+      <input type="text" class="rebalance-extra-input" id="extraInvestInput" placeholder="追加投資額" inputmode="numeric" style="display:none;">
+      <input type="text" class="rebalance-extra-input" id="tsumitateInput" placeholder="毎月の積立額" inputmode="numeric" style="display:none;">
+      <span class="rebalance-note" id="rebalanceNote" style="display:none;"></span>
+    </div>
+    <div class="table-scroll">
+    <table class="alloc-table" id="allocTable">
+      <thead><tr><th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">現在金額</th><th class="amount">目標金額</th><th class="amount">差分</th><th class="amount">差分(%)</th></tr></thead>
+      <tbody></tbody>
+      <tfoot><tr class="total-row"><td>合計</td><td class="amount" id="totalTargetPct">0%</td><td class="amount" id="totalCurrent">¥0</td><td class="amount" id="totalTarget">¥0</td><td class="amount" id="totalDiff">¥0</td><td class="amount" id="totalDiffPct">0%</td></tr></tfoot>
+    </table>
+    </div>
+    <p class="validation-warn" id="allocWarn">目標比率の合計が100%ではありません。</p>
+  </div>
+
+  <!-- Withdrawal Simulation -->
+  <div class="card">
+    <h2>取り崩しシミュレーション</h2>
+    <div class="withdraw-input-row">
+      <div class="withdraw-toggle" id="withdrawToggle">
+        <button type="button" class="active" data-mode="amount">金額</button>
+        <button type="button" data-mode="percent">パーセント</button>
+      </div>
+      <input type="text" id="withdrawInput" placeholder="取り崩し額" inputmode="numeric">
+      <span class="withdraw-converted" id="withdrawConverted"></span>
+      <button type="button" class="btn btn-primary" id="withdrawCalcBtn">計算</button>
+    </div>
+    <p class="withdraw-error" id="withdrawError"></p>
+    <div class="withdraw-result" id="withdrawResult">
+      <div class="table-scroll">
+      <table class="alloc-table">
+        <thead><tr><th>アセット種別</th><th class="amount">現在残高</th><th class="amount">売却額</th><th class="amount">取崩後残高</th><th class="amount">取崩後比率</th><th class="amount">目標比率</th></tr></thead>
+        <tbody id="withdrawBody"></tbody>
+        <tfoot><tr class="total-row"><td>合計</td><td class="amount" id="wdTotalCurrent"></td><td class="amount" id="wdTotalSell"></td><td class="amount" id="wdTotalAfter"></td><td class="amount" id="wdTotalAfterPct"></td><td class="amount" id="wdTotalTargetPct"></td></tr></tfoot>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Management -->
+  <div class="card">
+    <h2>データ管理</h2>
+    <div class="data-actions">
+      <button class="btn btn-secondary" id="exportBtn">JSONエクスポート</button>
+      <button class="btn btn-secondary" id="importBtn">JSONインポート</button>
+      <input type="file" id="importFile" accept=".json">
+      <button class="btn btn-danger" id="clearBtn">全データクリア</button>
+    </div>
+  </div>
+</main>
+
+<script>
+(function() {
+  'use strict';
+
+  const DEFAULT_ASSET_TYPES = ['国内株','海外先進国株','新興国株','国内債券','海外先進国債券','新興国債券','海外REIT','国内REIT','コモディティ'];
+  const DEFAULT_COLORS = ['#4361ee','#3a86ff','#8338ec','#ff006e','#fb5607','#06d6a0','#118ab2','#cfbe0b','#ffbe0b'];
+  let assetTypes = DEFAULT_ASSET_TYPES.slice();
+  let assetColors = DEFAULT_COLORS.slice();
+  const STORAGE_KEY = 'assetBalanceData';
+
+  let funds = [];
+  let targetPcts = {};
+  assetTypes.forEach(t => targetPcts[t] = 0);
+
+  let chart = null;
+  let lastAddedFundId = null;
+
+  // Chart.js plugin: center text
+  const centerTextPlugin = {
+    id: 'centerText',
+    afterDraw(chart) {
+      const { ctx, chartArea: { left, right, top, bottom } } = chart;
+      const grand = getGrandTotal();
+      const text = formatYen(grand);
+      ctx.save();
+      const cx = (left + right) / 2;
+      const cy = (top + bottom) / 2;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#666';
+      ctx.font = '500 0.75rem -apple-system, sans-serif';
+      ctx.fillText('合計', cx, cy - 14);
+      ctx.fillStyle = '#1a1a2e';
+      ctx.font = 'bold 1.15rem -apple-system, sans-serif';
+      ctx.fillText(text, cx, cy + 10);
+      ctx.restore();
+    }
+  };
+
+  // --- Utilities ---
+  function formatYen(n) {
+    return '¥' + Math.round(n).toLocaleString('ja-JP');
+  }
+
+  function parseAmount(str) {
+    const cleaned = String(str).replace(/[¥,、，\s]/g, '');
+    const n = Number(cleaned);
+    return isNaN(n) || n < 0 ? NaN : n;
+  }
+
+  function genId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  // --- Persistence ---
+  function save() {
+    const data = { funds, targetPcts, assetTypes, assetColors };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.assetTypes) && data.assetTypes.length > 0) assetTypes = data.assetTypes;
+      assetColors = Array.isArray(data.assetColors) ? data.assetColors.slice() : assetColors;
+      while (assetColors.length < assetTypes.length) {
+        assetColors.push(DEFAULT_COLORS[assetColors.length] || '#888888');
+      }
+      if (Array.isArray(data.funds)) funds = data.funds;
+      if (data.targetPcts) {
+        targetPcts = {};
+        assetTypes.forEach(t => {
+          targetPcts[t] = typeof data.targetPcts[t] === 'number' ? data.targetPcts[t] : 0;
+        });
+      }
+    } catch(e) { /* ignore corrupt data */ }
+  }
+
+  // --- Aggregation ---
+  function getAssetTotals() {
+    const totals = {};
+    assetTypes.forEach(t => totals[t] = 0);
+    funds.forEach(f => { totals[f.assetType] = (totals[f.assetType] || 0) + f.amount; });
+    return totals;
+  }
+
+  function getGrandTotal() {
+    return funds.reduce((s, f) => s + f.amount, 0);
+  }
+
+  // --- Fund Table ---
+  function renderFundTable() {
+    const tbody = document.querySelector('#fundTable tbody');
+    const table = document.getElementById('fundTable');
+    const empty = document.getElementById('emptyMsg');
+
+    if (funds.length === 0) {
+      table.style.display = 'none';
+      empty.style.display = '';
+      return;
+    }
+    table.style.display = '';
+    empty.style.display = 'none';
+
+    tbody.innerHTML = funds.map(f => `
+      <tr data-id="${f.id}" draggable="false">
+        <td><span class="drag-handle">☰</span></td>
+        <td>${escapeHtml(f.name)}</td>
+        <td>${escapeHtml(f.assetType)}</td>
+        <td class="amount"><input class="edit-amount" type="text" value="${Math.round(f.amount).toLocaleString('ja-JP')}" data-id="${f.id}" inputmode="numeric"></td>
+        <td><button class="btn btn-danger" data-delete="${f.id}">削除</button></td>
+      </tr>
+    `).join('');
+    if (lastAddedFundId) {
+      const row = tbody.querySelector(`tr[data-id="${lastAddedFundId}"]`);
+      if (row) row.classList.add('just-added');
+      lastAddedFundId = null;
+    }
+    initDragAndDrop(tbody);
+  }
+
+  // --- Drag and Drop ---
+  let dragSrcId = null;
+
+  function initDragAndDrop(tbody) {
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(row => {
+      // Enable draggable only while pressing on the handle
+      const handle = row.querySelector('.drag-handle');
+      handle.addEventListener('mousedown', function() { row.setAttribute('draggable', 'true'); });
+      handle.addEventListener('touchstart', function() { row.setAttribute('draggable', 'true'); }, { passive: true });
+
+      row.addEventListener('dragstart', function(e) {
+        dragSrcId = this.dataset.id;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', dragSrcId);
+      });
+      row.addEventListener('dragend', function() {
+        this.classList.remove('dragging');
+        this.setAttribute('draggable', 'false');
+        tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+        dragSrcId = null;
+      });
+      row.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+        if (this.dataset.id !== dragSrcId) this.classList.add('drag-over');
+      });
+      row.addEventListener('dragleave', function() {
+        this.classList.remove('drag-over');
+      });
+      row.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        const targetId = this.dataset.id;
+        if (!dragSrcId || dragSrcId === targetId) return;
+        const fromIdx = funds.findIndex(f => f.id === dragSrcId);
+        const toIdx = funds.findIndex(f => f.id === targetId);
+        if (fromIdx === -1 || toIdx === -1) return;
+        const [moved] = funds.splice(fromIdx, 1);
+        funds.splice(toIdx, 0, moved);
+        save();
+        renderFundTable();
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // --- Chart ---
+  function renderChart() {
+    const totals = getAssetTotals();
+    const grand = getGrandTotal();
+    const labels = [];
+    const data = [];
+    const colors = [];
+
+    assetTypes.forEach((t, i) => {
+      if (totals[t] > 0) {
+        labels.push(t);
+        data.push(totals[t]);
+        colors.push(assetColors[i]);
+      }
+    });
+
+    if (chart) {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = data;
+      chart.data.datasets[0].backgroundColor = colors;
+      chart.update();
+    } else {
+      const ctx = document.getElementById('assetChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const pct = grand > 0 ? (ctx.parsed / grand * 100).toFixed(1) : 0;
+                  return `${ctx.label}: ${formatYen(ctx.parsed)} (${pct}%)`;
+                }
+              }
+            }
+          }
+        },
+        plugins: [centerTextPlugin]
+      });
+    }
+
+    // Hide canvas when no data
+    const chartContainer = document.querySelector('.chart-container');
+    chartContainer.style.display = grand === 0 ? 'none' : '';
+
+    // Legend
+    const legend = document.getElementById('chartLegend');
+    if (grand === 0) {
+      legend.innerHTML = '<p class="empty-msg">データがありません</p>';
+      return;
+    }
+    legend.innerHTML = assetTypes.map((t, i) => {
+      if (totals[t] <= 0) return '';
+      const pct = (totals[t] / grand * 100).toFixed(1);
+      return `<div class="chart-legend-item">
+        <span class="chart-legend-color" style="background:${assetColors[i]}"></span>
+        <span class="chart-legend-label">${t}</span>
+        <span class="chart-legend-value">${formatYen(totals[t])} (${pct}%)</span>
+      </div>`;
+    }).join('');
+  }
+
+  // --- Allocation Table ---
+  let rebalanceMode = 'normal';
+
+  function calcBuyOnlyRebalance(extraAmount) {
+    const totals = getAssetTotals();
+    const grand = getGrandTotal();
+    const newTotal = grand + extraAmount;
+    const totalPct = Object.values(targetPcts).reduce((s, v) => s + v, 0);
+    if (totalPct < 0.01) return null;
+
+    const result = {};
+    let totalBuy = 0;
+
+    // Calculate ideal amounts after adding extra investment
+    assetTypes.forEach(t => {
+      const current = totals[t];
+      const idealAfter = newTotal * (targetPcts[t] || 0) / totalPct;
+      const buy = Math.max(0, idealAfter - current);
+      result[t] = { current, buy, targetPct: targetPcts[t] || 0 };
+      totalBuy += buy;
+    });
+
+    // Scale buy amounts to match the extra investment amount
+    if (extraAmount > 0 && totalBuy > 0.5) {
+      const scale = extraAmount / totalBuy;
+      assetTypes.forEach(t => {
+        result[t].buy = result[t].buy * scale;
+      });
+    }
+
+    return result;
+  }
+
+  function renderAllocTable() {
+    const totals = getAssetTotals();
+    const grand = getGrandTotal();
+    const tbody = document.querySelector('#allocTable tbody');
+    const totalPct = Object.values(targetPcts).reduce((s, v) => s + v, 0);
+
+    if (rebalanceMode === 'buyonly') {
+      const extraVal = parseAmount(document.getElementById('extraInvestInput').value);
+      const extraAmount = isNaN(extraVal) ? 0 : extraVal;
+      const hasExtra = extraAmount > 0;
+      const result = hasExtra ? calcBuyOnlyRebalance(extraAmount) : null;
+      const newTotal = grand + extraAmount;
+
+      // Update header for buy-only mode
+      const thead = document.querySelector('#allocTable thead tr');
+      thead.innerHTML = '<th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">現在金額</th><th class="amount">買い増し額</th><th class="amount">買増後金額</th><th class="amount">買増後比率</th>';
+
+      let totalBuy = 0;
+      tbody.innerHTML = assetTypes.map((t, i) => {
+        const current = totals[t];
+        const pct = targetPcts[t] || 0;
+        let buyAmount, afterAmount, afterPct;
+
+        if (hasExtra && result) {
+          buyAmount = result[t].buy;
+          afterAmount = current + buyAmount;
+          afterPct = newTotal > 0 ? (afterAmount / newTotal * 100).toFixed(1) : '0.0';
+        } else {
+          // No extra input: show how much is needed to reach target (buy only)
+          const target = grand * pct / (totalPct > 0 ? totalPct : 100);
+          const diff = target - current;
+          buyAmount = Math.max(0, diff);
+          afterAmount = current + buyAmount;
+          afterPct = grand > 0 ? (afterAmount / (grand + buyAmount) * 100).toFixed(1) : '0.0';
+        }
+        totalBuy += buyAmount;
+        const buyClass = buyAmount > 0.5 ? 'diff-positive' : '';
+        return `<tr>
+          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${t}</td>
+          <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${t}"></td>
+          <td class="amount">${formatYen(current)}</td>
+          <td class="amount ${buyClass}">${buyAmount > 0.5 ? '+' + formatYen(buyAmount) : '-'}</td>
+          <td class="amount">${formatYen(afterAmount)}</td>
+          <td class="amount">${afterPct}%</td>
+        </tr>`;
+      }).join('');
+
+      // Totals for buy-only mode
+      const afterGrand = hasExtra ? newTotal : grand + totalBuy;
+      document.getElementById('totalTargetPct').textContent = totalPct.toFixed(1) + '%';
+      document.getElementById('totalCurrent').textContent = formatYen(grand);
+      const diffEl = document.getElementById('totalDiff');
+      diffEl.textContent = totalBuy > 0.5 ? '+' + formatYen(totalBuy) : '-';
+      diffEl.className = 'amount ' + (totalBuy > 0.5 ? 'diff-positive' : '');
+      document.getElementById('totalTarget').textContent = formatYen(afterGrand);
+      const totalDiffPctEl = document.getElementById('totalDiffPct');
+      totalDiffPctEl.textContent = '100%';
+      totalDiffPctEl.className = 'amount';
+
+      // Update footer labels
+      const tfoot = document.querySelector('#allocTable tfoot tr');
+      tfoot.innerHTML = `<td>合計</td><td class="amount" id="totalTargetPct">${totalPct.toFixed(1)}%</td><td class="amount" id="totalCurrent">${formatYen(grand)}</td><td class="amount ${totalBuy > 0.5 ? 'diff-positive' : ''}" id="totalDiff">${totalBuy > 0.5 ? '+' + formatYen(totalBuy) : '-'}</td><td class="amount" id="totalTarget">${formatYen(afterGrand)}</td><td class="amount" id="totalDiffPct">100%</td>`;
+      tfoot.className = 'total-row';
+
+      // Note
+      const note = document.getElementById('rebalanceNote');
+      if (!hasExtra) {
+        note.textContent = '追加投資額を入力すると、その金額を最適に振り分けます';
+        note.style.display = '';
+      } else {
+        note.textContent = '';
+        note.style.display = 'none';
+      }
+    } else if (rebalanceMode === 'tsumitate') {
+      const tsumitateVal = parseAmount(document.getElementById('tsumitateInput').value);
+      const monthlyTotal = isNaN(tsumitateVal) ? 0 : tsumitateVal;
+      const hasInput = monthlyTotal > 0;
+
+      const thead = document.querySelector('#allocTable thead tr');
+      thead.innerHTML = '<th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">毎月積立額</th>';
+
+      let sumAlloc = 0;
+      tbody.innerHTML = assetTypes.map((t, i) => {
+        const pct = targetPcts[t] || 0;
+        const alloc = (hasInput && totalPct > 0) ? monthlyTotal * pct / totalPct : 0;
+        sumAlloc += alloc;
+        return `<tr>
+          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${t}</td>
+          <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${t}"></td>
+          <td class="amount">${hasInput && pct > 0 ? formatYen(alloc) : '-'}</td>
+        </tr>`;
+      }).join('');
+
+      const tfoot = document.querySelector('#allocTable tfoot tr');
+      tfoot.innerHTML = `<td>合計</td><td class="amount" id="totalTargetPct">${totalPct.toFixed(1)}%</td><td class="amount" id="totalCurrent">${hasInput ? formatYen(sumAlloc) : '-'}</td>`;
+      tfoot.className = 'total-row';
+
+      const note = document.getElementById('rebalanceNote');
+      if (!hasInput) {
+        note.textContent = '毎月の積立額を入力すると、目標比率に応じた配分を表示します';
+        note.style.display = '';
+      } else {
+        note.textContent = '';
+        note.style.display = 'none';
+      }
+    } else {
+      // Normal mode (original)
+      const thead = document.querySelector('#allocTable thead tr');
+      thead.innerHTML = '<th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">現在金額</th><th class="amount">目標金額</th><th class="amount">差分</th><th class="amount">差分(%)</th>';
+
+      document.getElementById('rebalanceNote').style.display = 'none';
+
+      tbody.innerHTML = assetTypes.map((t, i) => {
+        const current = totals[t];
+        const pct = targetPcts[t] || 0;
+        const target = grand * pct / 100;
+        const diff = target - current;
+        const diffClass = diff > 0.5 ? 'diff-positive' : diff < -0.5 ? 'diff-negative' : '';
+        const diffPct = grand > 0 ? (diff / grand * 100).toFixed(1) : '0.0';
+        return `<tr>
+          <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${t}</td>
+          <td class="amount"><input type="number" min="0" max="100" step="0.1" value="${pct}" data-asset="${t}"></td>
+          <td class="amount">${formatYen(current)}</td>
+          <td class="amount">${formatYen(target)}</td>
+          <td class="amount ${diffClass}">${diff >= 0 ? '+' : ''}${formatYen(diff)}</td>
+          <td class="amount ${diffClass}">${diff >= 0 ? '+' : ''}${diffPct}%</td>
+        </tr>`;
+      }).join('');
+
+      // Totals
+      const totalTarget = grand * totalPct / 100;
+      const totalDiff = totalTarget - grand;
+      // Rebuild footer for normal mode
+      const tfoot = document.querySelector('#allocTable tfoot tr');
+      tfoot.innerHTML = `<td>合計</td><td class="amount" id="totalTargetPct">${totalPct.toFixed(1)}%</td><td class="amount" id="totalCurrent">${formatYen(grand)}</td><td class="amount" id="totalTarget">${formatYen(totalTarget)}</td><td class="amount ${totalDiff > 0.5 ? 'diff-positive' : totalDiff < -0.5 ? 'diff-negative' : ''}" id="totalDiff">${(totalDiff >= 0 ? '+' : '') + formatYen(totalDiff)}</td><td class="amount ${totalDiff > 0.5 ? 'diff-positive' : totalDiff < -0.5 ? 'diff-negative' : ''}" id="totalDiffPct">${(totalDiff >= 0 ? '+' : '') + (grand > 0 ? (totalDiff / grand * 100).toFixed(1) : '0.0')}%</td>`;
+      tfoot.className = 'total-row';
+    }
+
+    // Validation
+    const warn = document.getElementById('allocWarn');
+    warn.classList.toggle('show', Math.abs(totalPct - 100) > 0.01 && totalPct > 0);
+  }
+
+  function renderAssetSelect() {
+    const sel = document.getElementById('assetTypeSelect');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">アセット種別</option>' +
+      assetTypes.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    if (current && assetTypes.includes(current)) sel.value = current;
+  }
+
+  function renderAll() {
+    renderAssetSelect();
+    renderFundTable();
+    renderChart();
+    renderAllocTable();
+  }
+
+  // --- Settings Dialog ---
+  const PALETTE = ['#e63946','#457b9d','#2a9d8f','#e9c46a','#f4a261','#264653','#a8dadc','#6a4c93','#1982c4','#8ac926'];
+
+  function openSettings() {
+    const overlay = document.createElement('div');
+    overlay.className = 'settings-overlay';
+    const dialog = document.createElement('div');
+    dialog.className = 'settings-dialog';
+
+    const oldTypes = assetTypes.slice();
+    const oldColors = assetColors.slice();
+
+    // Working copy: each item tracks its originalName for rename detection
+    let items = assetTypes.map((t, i) => ({ name: t, color: assetColors[i] || '#888888', originalName: t }));
+
+    function buildList() {
+      const listEl = dialog.querySelector('.settings-list');
+      listEl.innerHTML = '';
+      items.forEach((item, i) => {
+        const row = document.createElement('div');
+        row.className = 'settings-row';
+        row.draggable = false;
+        row.innerHTML = `<span class="drag-handle">☰</span><input type="text" value="${escapeHtml(item.name)}" data-idx="${i}"><input type="color" value="${item.color}" data-idx="${i}"><button type="button" class="btn btn-danger" data-delidx="${i}">削除</button>`;
+        listEl.appendChild(row);
+      });
+      initSettingsDrag(listEl);
+    }
+
+    function readInputs() {
+      const nameInputs = dialog.querySelectorAll('.settings-list input[type="text"]');
+      const colorInputs = dialog.querySelectorAll('.settings-list input[type="color"]');
+      nameInputs.forEach((inp, i) => {
+        if (items[i]) {
+          items[i].name = inp.value.trim();
+          items[i].color = colorInputs[i].value;
+        }
+      });
+    }
+
+    function initSettingsDrag(listEl) {
+      let dragIdx = null;
+      const rows = listEl.querySelectorAll('.settings-row');
+      rows.forEach((row, i) => {
+        const handle = row.querySelector('.drag-handle');
+        handle.addEventListener('mousedown', () => row.draggable = true);
+        handle.addEventListener('touchstart', () => row.draggable = true, { passive: true });
+        row.addEventListener('dragstart', (e) => {
+          dragIdx = i;
+          row.style.opacity = '0.4';
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        row.addEventListener('dragend', () => {
+          row.style.opacity = '';
+          row.draggable = false;
+          listEl.querySelectorAll('.settings-row').forEach(r => r.style.borderTop = '');
+        });
+        row.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          listEl.querySelectorAll('.settings-row').forEach(r => r.style.borderTop = '');
+          if (i !== dragIdx) row.style.borderTop = '2px solid #4361ee';
+        });
+        row.addEventListener('drop', (e) => {
+          e.preventDefault();
+          row.style.borderTop = '';
+          if (dragIdx === null || dragIdx === i) return;
+          readInputs();
+          const [moved] = items.splice(dragIdx, 1);
+          items.splice(i, 0, moved);
+          buildList();
+        });
+      });
+    }
+
+    dialog.innerHTML = `
+      <h2>アセット種別設定</h2>
+      <div class="settings-list"></div>
+      <div class="settings-add-row">
+        <button type="button" class="btn btn-secondary" id="settingsAddBtn">＋ アセット種別を追加</button>
+      </div>
+      <div class="settings-actions">
+        <button type="button" class="btn btn-secondary" id="settingsDefaultBtn">デフォルトに戻す</button>
+        <button type="button" class="btn btn-secondary" id="settingsCancelBtn">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="settingsSaveBtn">保存</button>
+      </div>`;
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    buildList();
+
+    function closeSettings() {
+      document.removeEventListener('keydown', onEscKey);
+      overlay.remove();
+    }
+
+    // Close on overlay click
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeSettings();
+    });
+
+    // Escape key
+    function onEscKey(e) { if (e.key === 'Escape') closeSettings(); }
+    document.addEventListener('keydown', onEscKey);
+
+    // Add
+    dialog.querySelector('#settingsAddBtn').addEventListener('click', function() {
+      readInputs();
+      const color = PALETTE[items.length % PALETTE.length];
+      items.push({ name: '', color, originalName: null });
+      buildList();
+      const inputs = dialog.querySelectorAll('.settings-list input[type="text"]');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+
+    // Delete (delegated)
+    dialog.querySelector('.settings-list').addEventListener('click', function(e) {
+      const btn = e.target.closest('[data-delidx]');
+      if (!btn) return;
+      readInputs();
+      const idx = parseInt(btn.dataset.delidx);
+      items.splice(idx, 1);
+      buildList();
+    });
+
+    // Default
+    dialog.querySelector('#settingsDefaultBtn').addEventListener('click', function() {
+      items = DEFAULT_ASSET_TYPES.map((t, i) => ({ name: t, color: DEFAULT_COLORS[i], originalName: t }));
+      buildList();
+    });
+
+    // Cancel
+    dialog.querySelector('#settingsCancelBtn').addEventListener('click', closeSettings);
+
+    // Save
+    dialog.querySelector('#settingsSaveBtn').addEventListener('click', function() {
+      readInputs();
+      applyAssetTypeChanges(items, oldTypes);
+      closeSettings();
+    });
+  }
+
+  function applyAssetTypeChanges(items, oldTypes) {
+    // Deduplicate and filter empty names
+    const seen = new Set();
+    const validItems = items.filter(item => {
+      if (!item.name || seen.has(item.name)) return false;
+      seen.add(item.name);
+      return true;
+    });
+
+    if (validItems.length === 0) {
+      alert('少なくとも1つのアセット種別が必要です。');
+      return;
+    }
+
+    const newTypes = validItems.map(item => item.name);
+
+    // Rename detection: use originalName tracking
+    validItems.forEach(item => {
+      if (item.originalName && item.originalName !== item.name && oldTypes.includes(item.originalName) && !newTypes.includes(item.originalName)) {
+        // Renamed: update funds
+        funds.forEach(f => { if (f.assetType === item.originalName) f.assetType = item.name; });
+        // Update targetPcts key
+        if (typeof targetPcts[item.originalName] === 'number') {
+          targetPcts[item.name] = targetPcts[item.originalName];
+          delete targetPcts[item.originalName];
+        }
+      }
+    });
+
+    // Deleted types: warn if funds exist, then remove from targetPcts
+    const deletedWithFunds = oldTypes.filter(t => !newTypes.includes(t) && funds.some(f => f.assetType === t));
+    if (deletedWithFunds.length > 0) {
+      const names = deletedWithFunds.join('、');
+      if (!confirm(`「${names}」にはファンドが登録されています。種別を削除するとこれらのファンドが種別なしになります。続行しますか？`)) return;
+    }
+    oldTypes.forEach(t => {
+      if (!newTypes.includes(t)) {
+        delete targetPcts[t];
+      }
+    });
+
+    // Added types: add to targetPcts with 0
+    newTypes.forEach(t => {
+      if (typeof targetPcts[t] !== 'number') {
+        targetPcts[t] = 0;
+      }
+    });
+
+    assetTypes = newTypes;
+    assetColors = validItems.map(item => item.color);
+    save();
+    renderAll();
+  }
+
+  // --- Events ---
+  // Settings button
+  document.getElementById('settingsBtn').addEventListener('click', openSettings);
+
+  // Fund form submit
+  document.getElementById('fundForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.fundName.value.trim();
+    const assetType = form.assetType.value;
+    const amount = parseAmount(form.amount.value);
+    if (!name || !assetType) return;
+    if (isNaN(amount)) { alert('金額を正しく入力してください。'); return; }
+    const newId = genId();
+    lastAddedFundId = newId;
+    funds.push({ id: newId, name, assetType, amount });
+    save();
+    renderAll();
+    form.reset();
+    form.fundName.focus();
+  });
+
+  // Fund table: delete & edit
+  document.getElementById('fundTableWrapper').addEventListener('click', function(e) {
+    const delBtn = e.target.closest('[data-delete]');
+    if (delBtn) {
+      const fund = funds.find(f => f.id === delBtn.dataset.delete);
+      const label = fund ? fund.name : 'このファンド';
+      if (!confirm(`「${label}」を削除しますか？`)) return;
+      funds = funds.filter(f => f.id !== delBtn.dataset.delete);
+      save();
+      renderAll();
+    }
+  });
+
+  document.getElementById('fundTableWrapper').addEventListener('change', function(e) {
+    if (e.target.classList.contains('edit-amount')) {
+      const id = e.target.dataset.id;
+      const val = parseAmount(e.target.value);
+      if (isNaN(val)) {
+        const fund = funds.find(f => f.id === id);
+        if (fund) e.target.value = Math.round(fund.amount).toLocaleString('ja-JP');
+        return;
+      }
+      const fund = funds.find(f => f.id === id);
+      if (fund) { fund.amount = val; save(); renderChart(); renderAllocTable(); }
+    }
+  });
+
+  // Allocation table: target pct change
+  document.getElementById('allocTable').addEventListener('change', function(e) {
+    if (e.target.dataset.asset) {
+      const val = parseFloat(e.target.value) || 0;
+      targetPcts[e.target.dataset.asset] = Math.max(0, Math.min(100, val));
+      save();
+      const focusedAsset = e.target.dataset.asset;
+      const selStart = e.target.selectionStart;
+      const selEnd = e.target.selectionEnd;
+      renderAllocTable();
+      const nextInput = document.querySelector(`#allocTable input[data-asset="${focusedAsset}"]`);
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.setSelectionRange(selStart, selEnd);
+      }
+    }
+  });
+
+  // Export
+  document.getElementById('exportBtn').addEventListener('click', function() {
+    const data = JSON.stringify({ funds, targetPcts, assetTypes, assetColors }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'asset-balance-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Import
+  document.getElementById('importBtn').addEventListener('click', function() {
+    document.getElementById('importFile').click();
+  });
+
+  document.getElementById('importFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!Array.isArray(data.funds)) throw new Error('invalid');
+        if (Array.isArray(data.assetTypes) && data.assetTypes.length > 0) {
+          assetTypes = data.assetTypes;
+          assetColors = Array.isArray(data.assetColors) ? data.assetColors.slice() : [];
+          while (assetColors.length < assetTypes.length) {
+            assetColors.push(DEFAULT_COLORS[assetColors.length] || '#888888');
+          }
+        }
+        funds = data.funds.filter(f => f.id && f.name && f.assetType && typeof f.amount === 'number');
+        targetPcts = {};
+        assetTypes.forEach(t => {
+          targetPcts[t] = (data.targetPcts && typeof data.targetPcts[t] === 'number') ? data.targetPcts[t] : 0;
+        });
+        save();
+        renderAll();
+        alert('インポートが完了しました。');
+      } catch(err) {
+        alert('JSONファイルの読み込みに失敗しました。');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // --- Clear All ---
+  document.getElementById('clearBtn').addEventListener('click', function() {
+    if (!confirm('全てのファンドデータと目標比率をクリアします。よろしいですか？')) return;
+    funds = [];
+    assetTypes = DEFAULT_ASSET_TYPES.slice();
+    assetColors = DEFAULT_COLORS.slice();
+    targetPcts = {};
+    assetTypes.forEach(t => targetPcts[t] = 0);
+    save();
+    renderAll();
+  });
+
+  // --- Rebalance Toggle ---
+  document.getElementById('rebalanceToggle').addEventListener('click', function(e) {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    rebalanceMode = btn.dataset.mode;
+    this.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+    const extraInput = document.getElementById('extraInvestInput');
+    const tsumitateInput = document.getElementById('tsumitateInput');
+    extraInput.style.display = rebalanceMode === 'buyonly' ? '' : 'none';
+    tsumitateInput.style.display = rebalanceMode === 'tsumitate' ? '' : 'none';
+    if (rebalanceMode !== 'buyonly') {
+      extraInput.value = '';
+    }
+    if (rebalanceMode !== 'tsumitate') {
+      tsumitateInput.value = '';
+    }
+    if (rebalanceMode === 'normal') {
+      document.getElementById('rebalanceNote').style.display = 'none';
+    }
+    renderAllocTable();
+  });
+
+  document.getElementById('extraInvestInput').addEventListener('input', function() {
+    renderAllocTable();
+  });
+
+  document.getElementById('tsumitateInput').addEventListener('input', function() {
+    renderAllocTable();
+  });
+
+  // --- Withdrawal Simulation ---
+  let withdrawMode = 'amount';
+
+  function calcWithdrawal(withdrawTotal) {
+    const totals = getAssetTotals();
+    const grand = getGrandTotal();
+    const afterTotal = grand - withdrawTotal;
+    const totalTargetPct = Object.values(targetPcts).reduce((s, v) => s + v, 0);
+
+    const result = {};
+    assetTypes.forEach(t => {
+      const current = totals[t];
+      const idealAfter = afterTotal * (targetPcts[t] || 0) / totalTargetPct;
+      const rawSell = current - idealAfter;
+      result[t] = {
+        current,
+        sell: Math.max(0, Math.min(rawSell, current)),
+        targetPct: targetPcts[t] || 0
+      };
+    });
+
+    // Adjust if total sell doesn't match withdrawTotal
+    let totalSell = assetTypes.reduce((s, t) => s + result[t].sell, 0);
+    let shortfall = withdrawTotal - totalSell;
+
+    if (shortfall > 0.5) {
+      const distributable = assetTypes.filter(t => result[t].current - result[t].sell > 0.5);
+      const distribTotal = distributable.reduce((s, t) => s + (result[t].current - result[t].sell), 0);
+      if (distribTotal > 0) {
+        distributable.forEach(t => {
+          const remaining = result[t].current - result[t].sell;
+          const extra = Math.min(remaining, shortfall * (remaining / distribTotal));
+          result[t].sell += extra;
+        });
+      }
+    }
+
+    assetTypes.forEach(t => {
+      result[t].after = result[t].current - result[t].sell;
+      result[t].afterPct = afterTotal > 0 ? (result[t].after / afterTotal * 100) : 0;
+    });
+
+    return result;
+  }
+
+  // Toggle mode
+  document.getElementById('withdrawToggle').addEventListener('click', function(e) {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    withdrawMode = btn.dataset.mode;
+    this.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+    document.getElementById('withdrawInput').placeholder = withdrawMode === 'amount' ? '取り崩し額' : '取り崩し率(%)';
+    document.getElementById('withdrawInput').value = '';
+    document.getElementById('withdrawConverted').textContent = '';
+    document.getElementById('withdrawError').classList.remove('show');
+    document.getElementById('withdrawResult').classList.remove('show');
+  });
+
+  // Live conversion display for percent mode
+  document.getElementById('withdrawInput').addEventListener('input', function() {
+    const converted = document.getElementById('withdrawConverted');
+    if (withdrawMode === 'percent') {
+      const pct = parseFloat(this.value);
+      if (!isNaN(pct) && pct > 0) {
+        converted.textContent = '= ' + formatYen(getGrandTotal() * pct / 100);
+      } else {
+        converted.textContent = '';
+      }
+    } else {
+      converted.textContent = '';
+    }
+  });
+
+  // Calculate button
+  document.getElementById('withdrawCalcBtn').addEventListener('click', function() {
+    const errEl = document.getElementById('withdrawError');
+    const resultEl = document.getElementById('withdrawResult');
+    errEl.classList.remove('show');
+    resultEl.classList.remove('show');
+
+    const grand = getGrandTotal();
+    const totalTargetPct = Object.values(targetPcts).reduce((s, v) => s + v, 0);
+
+    if (grand <= 0) {
+      errEl.textContent = 'ファンドが登録されていません。';
+      errEl.classList.add('show');
+      return;
+    }
+    if (totalTargetPct < 0.01) {
+      errEl.textContent = '目標アロケーションを設定してください。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    let withdrawTotal;
+    if (withdrawMode === 'percent') {
+      const pct = parseFloat(document.getElementById('withdrawInput').value);
+      if (isNaN(pct) || pct <= 0) {
+        errEl.textContent = '取り崩し率を正しく入力してください。';
+        errEl.classList.add('show');
+        return;
+      }
+      withdrawTotal = grand * pct / 100;
+    } else {
+      withdrawTotal = parseAmount(document.getElementById('withdrawInput').value);
+      if (isNaN(withdrawTotal) || withdrawTotal <= 0) {
+        errEl.textContent = '取り崩し額を正しく入力してください。';
+        errEl.classList.add('show');
+        return;
+      }
+    }
+
+    if (withdrawTotal > grand) {
+      errEl.textContent = '取り崩し額がポートフォリオ合計を超えています。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    const result = calcWithdrawal(withdrawTotal);
+    const afterTotal = grand - withdrawTotal;
+
+    const tbody = document.getElementById('withdrawBody');
+    tbody.innerHTML = assetTypes.map((t, i) => {
+      const r = result[t];
+      if (r.current <= 0 && r.targetPct <= 0) return '';
+      return `<tr>
+        <td><span class="chart-legend-color" style="background:${assetColors[i]};display:inline-block;vertical-align:middle;margin-right:0.4rem;"></span>${t}</td>
+        <td class="amount">${formatYen(r.current)}</td>
+        <td class="amount sell-amount">${r.sell > 0.5 ? '-' + formatYen(r.sell) : '-'}</td>
+        <td class="amount">${formatYen(r.after)}</td>
+        <td class="amount">${r.afterPct.toFixed(1)}%</td>
+        <td class="amount">${r.targetPct.toFixed(1)}%</td>
+      </tr>`;
+    }).join('');
+
+    const totalSell = assetTypes.reduce((s, t) => s + result[t].sell, 0);
+    document.getElementById('wdTotalCurrent').textContent = formatYen(grand);
+    document.getElementById('wdTotalSell').innerHTML = '<span class="sell-amount">-' + formatYen(totalSell) + '</span>';
+    document.getElementById('wdTotalAfter').textContent = formatYen(afterTotal);
+    document.getElementById('wdTotalAfterPct').textContent = '100%';
+    document.getElementById('wdTotalTargetPct').textContent = totalTargetPct.toFixed(1) + '%';
+
+    resultEl.classList.add('show');
+  });
+
+  // Enter key triggers calculation
+  document.getElementById('withdrawInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('withdrawCalcBtn').click();
+    }
+  });
+
+  // --- Init ---
+  load();
+  renderAll();
+})();
+</script>
+</body>
+</html>
