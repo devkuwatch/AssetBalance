@@ -639,10 +639,10 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     const data = [];
     const colors = [];
 
-    assetTypes.forEach((t, i) => {
-      if (totals[t] > 0) {
-        labels.push(t);
-        data.push(totals[t]);
+    assetTypes.forEach((assetType, i) => {
+      if (totals[assetType] > 0) {
+        labels.push(assetType);
+        data.push(totals[assetType]);
         colors.push(assetColors[i]);
       }
     });
@@ -879,7 +879,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     const sel = document.getElementById('assetTypeSelect');
     const current = sel.value;
     sel.innerHTML = '<option value="">アセット種別</option>' +
-      assetTypes.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+      assetTypes.map(assetType => `<option value="${escapeHtml(assetType)}">${escapeHtml(assetType)}</option>`).join('');
     if (current && assetTypes.includes(current)) sel.value = current;
   }
 
