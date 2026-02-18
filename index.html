@@ -999,15 +999,15 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     }
 
     dialog.innerHTML = `
-      <h2>アセット種別設定</h2>
+      <h2>${t('settingsDialogTitle')}</h2>
       <div class="settings-list"></div>
       <div class="settings-add-row">
-        <button type="button" class="btn btn-secondary" id="settingsAddBtn">＋ アセット種別を追加</button>
+        <button type="button" class="btn btn-secondary" id="settingsAddBtn">${t('btnSettingsAdd')}</button>
       </div>
       <div class="settings-actions">
-        <button type="button" class="btn btn-secondary" id="settingsDefaultBtn">デフォルトに戻す</button>
-        <button type="button" class="btn btn-secondary" id="settingsCancelBtn">キャンセル</button>
-        <button type="button" class="btn btn-primary" id="settingsSaveBtn">保存</button>
+        <button type="button" class="btn btn-secondary" id="settingsDefaultBtn">${t('btnSettingsDefault')}</button>
+        <button type="button" class="btn btn-secondary" id="settingsCancelBtn">${t('btnSettingsCancel')}</button>
+        <button type="button" class="btn btn-primary" id="settingsSaveBtn">${t('btnSettingsSave')}</button>
       </div>`;
 
     overlay.appendChild(dialog);
@@ -1075,7 +1075,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     });
 
     if (validItems.length === 0) {
-      alert('少なくとも1つのアセット種別が必要です。');
+      alert(t('alertMinAssetType'));
       return;
     }
 
@@ -1098,7 +1098,10 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     const deletedWithFunds = oldTypes.filter(assetType => !newTypes.includes(assetType) && funds.some(f => f.assetType === assetType));
     if (deletedWithFunds.length > 0) {
       const names = deletedWithFunds.join('、');
-      if (!confirm(`「${names}」にはファンドが登録されています。種別を削除するとこれらのファンドが種別なしになります。続行しますか？`)) return;
+      const confirmMsg = lang === 'en'
+        ? `"${names}" has registered funds. Deleting will leave those funds without a type. Continue?`
+        : `「${names}」にはファンドが登録されています。種別を削除するとこれらのファンドが種別なしになります。続行しますか？`;
+      if (!confirm(confirmMsg)) return;
     }
     oldTypes.forEach(assetType => {
       if (!newTypes.includes(assetType)) {
@@ -1139,7 +1142,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     const assetType = form.assetType.value;
     const amount = parseAmount(form.amount.value);
     if (!name || !assetType) return;
-    if (isNaN(amount)) { alert('金額を正しく入力してください。'); return; }
+    if (isNaN(amount)) { alert(t('alertInvalidAmount')); return; }
     const newId = genId();
     lastAddedFundId = newId;
     funds.push({ id: newId, name, assetType, amount });
@@ -1154,8 +1157,9 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     const delBtn = e.target.closest('[data-delete]');
     if (delBtn) {
       const fund = funds.find(f => f.id === delBtn.dataset.delete);
-      const label = fund ? fund.name : 'このファンド';
-      if (!confirm(`「${label}」を削除しますか？`)) return;
+      const label = fund ? fund.name : (lang === 'en' ? 'this fund' : 'このファンド');
+      const deleteMsg = lang === 'en' ? `Delete "${label}"?` : `「${label}」を削除しますか？`;
+      if (!confirm(deleteMsg)) return;
       funds = funds.filter(f => f.id !== delBtn.dataset.delete);
       save();
       renderAll();
@@ -1233,9 +1237,9 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
         });
         save();
         renderAll();
-        alert('インポートが完了しました。');
+        alert(t('alertImportDone'));
       } catch(err) {
-        alert('JSONファイルの読み込みに失敗しました。');
+        alert(t('alertImportFail'));
       }
     };
     reader.readAsText(file);
@@ -1244,7 +1248,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
   // --- Clear All ---
   document.getElementById('clearBtn').addEventListener('click', function() {
-    if (!confirm('全てのファンドデータと目標比率をクリアします。よろしいですか？')) return;
+    if (!confirm(t('confirmClearAll'))) return;
     funds = [];
     assetTypes = DEFAULT_ASSET_TYPES.slice();
     assetColors = DEFAULT_COLORS.slice();
@@ -1368,12 +1372,12 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     const totalTargetPct = Object.values(targetPcts).reduce((s, v) => s + v, 0);
 
     if (grand <= 0) {
-      errEl.textContent = 'ファンドが登録されていません。';
+      errEl.textContent = t('errNoFunds');
       errEl.classList.add('show');
       return;
     }
     if (totalTargetPct < 0.01) {
-      errEl.textContent = '目標アロケーションを設定してください。';
+      errEl.textContent = t('errNoAlloc');
       errEl.classList.add('show');
       return;
     }
@@ -1382,7 +1386,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     if (withdrawMode === 'percent') {
       const pct = parseFloat(document.getElementById('withdrawInput').value);
       if (isNaN(pct) || pct <= 0) {
-        errEl.textContent = '取り崩し率を正しく入力してください。';
+        errEl.textContent = t('errInvalidPct');
         errEl.classList.add('show');
         return;
       }
@@ -1390,14 +1394,14 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     } else {
       withdrawTotal = parseAmount(document.getElementById('withdrawInput').value);
       if (isNaN(withdrawTotal) || withdrawTotal <= 0) {
-        errEl.textContent = '取り崩し額を正しく入力してください。';
+        errEl.textContent = t('errInvalidWithdraw');
         errEl.classList.add('show');
         return;
       }
     }
 
     if (withdrawTotal > grand) {
-      errEl.textContent = '取り崩し額がポートフォリオ合計を超えています。';
+      errEl.textContent = t('errExceedsTotal');
       errEl.classList.add('show');
       return;
     }
