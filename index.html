@@ -510,7 +510,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
   // --- Persistence ---
   function save() {
-    const data = { funds, targetPcts, assetTypes, assetColors };
+    const data = { funds, targetPcts, assetTypes, assetColors, lang };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
@@ -524,6 +524,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       while (assetColors.length < assetTypes.length) {
         assetColors.push(DEFAULT_COLORS[assetColors.length] || '#888888');
       }
+      if (data.lang === 'en') lang = 'en';
       if (Array.isArray(data.funds)) funds = data.funds;
       if (data.targetPcts) {
         targetPcts = {};
