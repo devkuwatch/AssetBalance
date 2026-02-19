@@ -477,7 +477,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
   let chart = null;
   let lastAddedFundId = null;
 
-  let lang = 'ja';
+  let lang = (navigator.language || '').startsWith('ja') ? 'ja' : 'en';
 
   function t(key) {
     return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.ja[key] || key;
@@ -559,7 +559,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       while (assetColors.length < assetTypes.length) {
         assetColors.push(DEFAULT_COLORS[assetColors.length] || '#888888');
       }
-      if (data.lang === 'en') lang = 'en';
+      if (data.lang === 'en' || data.lang === 'ja') lang = data.lang;
       if (Array.isArray(data.funds)) funds = data.funds;
       if (data.targetPcts) {
         targetPcts = {};
