@@ -272,7 +272,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
     <table class="alloc-table" id="allocTable">
       <thead><tr><th>アセット種別</th><th class="amount">目標比率(%)</th><th class="amount">現在金額</th><th class="amount">目標金額</th><th class="amount">差分</th><th class="amount">差分(%)</th></tr></thead>
       <tbody></tbody>
-      <tfoot><tr class="total-row"><td>合計</td><td class="amount" id="totalTargetPct">0%</td><td class="amount" id="totalCurrent">¥0</td><td class="amount" id="totalTarget">¥0</td><td class="amount" id="totalDiff">¥0</td><td class="amount" id="totalDiffPct">0%</td></tr></tfoot>
+      <tfoot><tr class="total-row"><td data-i18n="totalLabel">合計</td><td class="amount" id="totalTargetPct">0%</td><td class="amount" id="totalCurrent">¥0</td><td class="amount" id="totalTarget">¥0</td><td class="amount" id="totalDiff">¥0</td><td class="amount" id="totalDiffPct">0%</td></tr></tfoot>
     </table>
     </div>
     <p class="validation-warn" id="allocWarn" data-i18n="allocWarn">目標比率の合計が100%ではありません。</p>
@@ -600,7 +600,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
       <tr data-id="${f.id}" draggable="false">
         <td><span class="drag-handle">☰</span></td>
         <td>${escapeHtml(f.name)}</td>
-        <td>${escapeHtml(f.assetType)}</td>
+        <td>${escapeHtml(tAsset(f.assetType))}</td>
         <td class="amount"><input class="edit-amount" type="text" value="${Math.round(f.amount).toLocaleString('ja-JP')}" data-id="${f.id}" inputmode="numeric"></td>
         <td><button class="btn btn-danger" data-delete="${f.id}">${t('btnDelete')}</button></td>
       </tr>
@@ -677,7 +677,7 @@ tr.just-added { animation: row-highlight 1.5s ease-out; }
 
     assetTypes.forEach((assetType, i) => {
       if (totals[assetType] > 0) {
-        labels.push(assetType);
+        labels.push(tAsset(assetType));
         data.push(totals[assetType]);
         colors.push(assetColors[i]);
       }
